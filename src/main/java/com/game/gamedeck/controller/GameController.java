@@ -1,5 +1,6 @@
 package com.game.gamedeck.controller;
 
+import com.game.gamedeck.model.CardEnum;
 import com.game.gamedeck.model.Game;
 import com.game.gamedeck.requests.AddPlayerRequest;
 import com.game.gamedeck.requests.CreateGameRequest;
@@ -60,5 +61,11 @@ public class GameController {
     @PostMapping("/games/{game-id}/decks")
     public ResponseEntity<Game> addDeck(@PathVariable("game-id") String gameId) {
         return new ResponseEntity<>(gameService.addDeck(gameId), HttpStatus.OK);
+    }
+
+    @GetMapping("/games/{game-id}/player/{player-name}/cards")
+    public ResponseEntity<List<CardEnum>> getPlayerCards(@PathVariable("game-id") String gameId,
+                                                         @PathVariable("playerName") String playerName) {
+        return new ResponseEntity<>(gameService.getPlayerCards(gameId, playerName), HttpStatus.OK);
     }
 }

@@ -1,5 +1,6 @@
 package com.game.gamedeck.services;
 
+import com.game.gamedeck.model.CardEnum;
 import com.game.gamedeck.model.Game;
 import com.game.gamedeck.requests.AddPlayerRequest;
 import com.game.gamedeck.requests.CreateGameRequest;
@@ -14,4 +15,5 @@ public interface GameService {
     Game addPlayer(String gameId, AddPlayerRequest addPlayerRequest);
     Game removePlayer(String gameId, String playerName);
     Game addDeck(String gameId);
+    List<CardEnum> getPlayerCards(String gameId, String playerName);
 }

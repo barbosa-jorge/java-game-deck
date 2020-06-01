@@ -63,6 +63,13 @@ public class GameServiceImpl implements GameService {
         return repository.save(game);
     }
 
+    @Override
+    public List<CardEnum> getPlayerCards(String gameId, String playerName) {
+
+        // TODO need to be implemented
+        return new ArrayList<>();
+    }
+
     public Game addPlayer(String gameId, AddPlayerRequest addPlayerRequest) {
 
         String playerName = addPlayerRequest.getPlayerName();
