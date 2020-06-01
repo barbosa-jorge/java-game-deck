@@ -1,0 +1,11 @@
+version: '3'
+services:
+  mongodb:
+    container_name: mongodb
+    image: mongo
+    ports:
+      - 27017:27017
+    volumes:
+      - $PWD/mongo_data:/data/db
+
+
