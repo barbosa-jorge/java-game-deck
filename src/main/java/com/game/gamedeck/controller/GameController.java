@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 @RestController
 @RequestMapping("/api")
@@ -79,5 +80,13 @@ public class GameController {
     @GetMapping("/games/{game-id}/decks/cards-left-per-suit")
     public ResponseEntity<Map<String, Long>> getCountCardsLeft(@PathVariable("game-id") String gameId) {
         return new ResponseEntity(gameService.getCountCardsLeft(gameId), HttpStatus.OK);
+    }
+
+    @GetMapping("/games/{game-id}/decks/count-carts-remaining")
+    public ResponseEntity<TreeMap<CardEnum, Long>> getCountRemainingCardsSortedBySuitAndFaceValue(
+            @PathVariable("game-id") String gameId) {
+
+        return new ResponseEntity(gameService
+                .getCountRemainingCardsSortedBySuitAndFaceValue(gameId), HttpStatus.OK);
     }
 }

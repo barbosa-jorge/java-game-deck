@@ -14,10 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -74,6 +72,22 @@ public class GameServiceImpl implements GameService {
 
         return game.getGameDeckCards().stream()
                 .collect(Collectors.groupingBy(CardEnum::getSuit, Collectors.counting()));
+    }
+
+    @Override
+    public TreeMap<CardEnum, Long> getCountRemainingCardsSortedBySuitAndFaceValue(String gameId) {
+
+        Game game = findGameById(gameId);
+
+        Comparator<CardEnum> sortBySuit = Comparator.comparing(CardEnum::getSuit);
+        Comparator<CardEnum> sortByValueDesc = Comparator.comparing(CardEnum::getValue).reversed();
+        Comparator<CardEnum> sortBySuitAndValueDesc = sortBySuit.thenComparing(sortByValueDesc);
+
+        return game.getGameDeckCards().stream()
+                .collect(Collectors.groupingBy(Function.identity(),
+                        () -> new TreeMap<>(sortBySuitAndValueDesc),
+                        Collectors.counting()));
+
     }
 
     @Override

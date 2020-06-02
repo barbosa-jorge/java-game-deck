@@ -8,6 +8,7 @@ import com.game.gamedeck.responses.PlayerTotal;
 
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 public interface GameService {
     List<Game> getAllGames();
@@ -20,4 +21,5 @@ public interface GameService {
     List<CardEnum> getPlayerCards(String gameId, String playerName);
     List<PlayerTotal> getPlayersTotals(String gameId);
     Map<String, Long> getCountCardsLeft(String gameId);
+    TreeMap<CardEnum, Long> getCountRemainingCardsSortedBySuitAndFaceValue(String gameId);
 }
