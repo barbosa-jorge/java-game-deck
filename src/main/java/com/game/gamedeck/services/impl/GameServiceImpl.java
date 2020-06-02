@@ -38,7 +38,6 @@ public class GameServiceImpl implements GameService {
         Game game = new Game();
         addPlayersToGame(createGameRequest.getPlayers(), game);
         addCardsToGameDeck(createGameRequest.getNumberOfDecks(), game);
-
         return repository.save(game);
     }
 
@@ -52,7 +51,6 @@ public class GameServiceImpl implements GameService {
 
     @Override
     public Game dealCards(String gameId, String playerName) {
-
         requiredNonEmpty(gameId, "Game Id");
         requiredNonEmpty(playerName, "Player Name");
 
@@ -62,7 +60,6 @@ public class GameServiceImpl implements GameService {
     }
 
     public List<PlayerTotal> getPlayersTotals(String gameId) {
-
         Game game = findGameById(gameId);
 
         return game.getPlayers().stream()
@@ -102,12 +99,9 @@ public class GameServiceImpl implements GameService {
 
         Game game = findGameById(gameId);
 
-        if (game.getPlayers().contains(playerName)) {
-            throw new GameException("User already exists");
-        }
+        validateExistentPlayerInGame(game, playerName);
 
         game.getPlayers().add(new Player(playerName));
-
         return repository.save(game);
     }
 
@@ -132,10 +126,7 @@ public class GameServiceImpl implements GameService {
     }
 
     private void pickCardAndAddToPlayer(Game game, String playerName) {
-
-        if (CollectionUtils.isEmpty(game.getGameDeckCards())) {
-            throw new GameException("No more cards available!");
-        }
+        validateAvailableCards(game);
 
         CardEnum pickedCard = game.getGameDeckCards().remove(0);
 
@@ -201,5 +192,17 @@ public class GameServiceImpl implements GameService {
     private Game findGameById(String gameId) {
         return repository.findById(gameId)
                 .orElseThrow(() -> new GameException("Game not found!"));
+    }
+
+    private void validateExistentPlayerInGame(Game game, String playerName) {
+        if (game.getPlayers().contains(playerName)) {
+            throw new GameException("User already exists");
+        }
+    }
+
+    private void validateAvailableCards(Game game) {
+        if (CollectionUtils.isEmpty(game.getGameDeckCards())) {
+            throw new GameException("No more cards available!");
+        }
     }
 }
