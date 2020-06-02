@@ -14,7 +14,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -43,9 +46,7 @@ public class GameServiceImpl implements GameService {
     public void deleteGame(String gameId) {
         requiredNonEmpty(gameId, "Game Id");
 
-        Game game = repository.findById(gameId)
-                .orElseThrow(() -> new GameException("Game not found!"));
-
+        Game game = findGameById(gameId);
         repository.delete(game);
     }
 
@@ -55,18 +56,14 @@ public class GameServiceImpl implements GameService {
         requiredNonEmpty(gameId, "Game Id");
         requiredNonEmpty(playerName, "Player Name");
 
-        Game game = repository.findById(gameId).
-                orElseThrow(() -> new GameException("Game not found!"));
-
+        Game game = findGameById(gameId);
         pickCardAndAddToPlayer(game, playerName);
-
         return repository.save(game);
     }
 
     public List<PlayerTotal> getPlayersTotals(String gameId) {
 
-        Game game = repository.findById(gameId).
-                orElseThrow(() -> new GameException("Game not found!"));
+        Game game = findGameById(gameId);
 
         return game.getPlayers().stream()
                 .map(this::getTotalsCardsForEachPlayer)
@@ -76,9 +73,7 @@ public class GameServiceImpl implements GameService {
 
     @Override
     public Map<String, Long> getCountCardsLeft(String gameId) {
-
-        Game game = repository.findById(gameId).
-                orElseThrow(() -> new GameException("Game not found!"));
+        Game game = findGameById(gameId);
 
         return game.getGameDeckCards().stream()
                 .collect(Collectors.groupingBy(CardEnum::getSuit, Collectors.counting()));
@@ -87,8 +82,7 @@ public class GameServiceImpl implements GameService {
     @Override
     public List<CardEnum> getPlayerCards(String gameId, String playerName) {
 
-        Game game = repository.findById(gameId).
-                orElseThrow(() -> new GameException("Game not found!"));
+        Game game = findGameById(gameId);
 
         Player player = game.getPlayers().stream()
                 .filter(p -> p.getName().equalsIgnoreCase(playerName))
@@ -106,8 +100,7 @@ public class GameServiceImpl implements GameService {
         requiredNonEmpty(gameId, "Game Id");
         requiredNonEmpty(playerName, "Player Name");
 
-        Game game = repository.findById(gameId).
-                orElseThrow(() -> new GameException("Game not found!"));
+        Game game = findGameById(gameId);
 
         if (game.getPlayers().contains(playerName)) {
             throw new GameException("User already exists");
@@ -119,22 +112,17 @@ public class GameServiceImpl implements GameService {
     }
 
     public Game removePlayer(String gameId, String playerName) {
-
         requiredNonEmpty(gameId, "Game Id");
         requiredNonEmpty(playerName, "Player Name");
 
-        Game game = repository.findById(gameId).
-                orElseThrow(() -> new GameException("Game not found!"));
-
+        Game game = findGameById(gameId);
         game.getPlayers().removeIf(p -> p.getName().equalsIgnoreCase(playerName));
         return repository.save(game);
 
     }
 
     public Game addDeck(String gameId) {
-        Game game = repository.findById(gameId).
-                orElseThrow(() -> new GameException("Game not found!"));
-
+        Game game = findGameById(gameId);
         game.getGameDeckCards().addAll(CardEnum.createDeck());
         return repository.save(game);
     }
@@ -208,5 +196,10 @@ public class GameServiceImpl implements GameService {
     private PlayerTotal getTotalsCardsForEachPlayer(Player player) {
         int total = calculatePlayerCards(player.getOnHandCards());
         return createPlayerTotal(player.getName(), total);
+    }
+
+    private Game findGameById(String gameId) {
+        return repository.findById(gameId)
+                .orElseThrow(() -> new GameException("Game not found!"));
     }
 }
