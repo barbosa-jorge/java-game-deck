@@ -4,6 +4,7 @@ import com.game.gamedeck.model.CardEnum;
 import com.game.gamedeck.model.Game;
 import com.game.gamedeck.requests.AddPlayerRequest;
 import com.game.gamedeck.requests.CreateGameRequest;
+import com.game.gamedeck.responses.PlayerTotal;
 import com.game.gamedeck.services.GameService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -11,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -63,9 +65,19 @@ public class GameController {
         return new ResponseEntity<>(gameService.addDeck(gameId), HttpStatus.OK);
     }
 
-    @GetMapping("/games/{game-id}/player/{player-name}/cards")
+    @GetMapping("/games/{game-id}/players/{player-name}/cards")
     public ResponseEntity<List<CardEnum>> getPlayerCards(@PathVariable("game-id") String gameId,
-                                                         @PathVariable("playerName") String playerName) {
+                                                         @PathVariable("player-name") String playerName) {
         return new ResponseEntity<>(gameService.getPlayerCards(gameId, playerName), HttpStatus.OK);
+    }
+
+    @GetMapping("/games/{game-id}/players/totals")
+    public ResponseEntity<List<PlayerTotal>> getPlayersTotals(@PathVariable("game-id") String gameId) {
+        return new ResponseEntity(gameService.getPlayersTotals(gameId), HttpStatus.OK);
+    }
+
+    @GetMapping("/games/{game-id}/decks/cards-left-per-suit")
+    public ResponseEntity<Map<String, Long>> getCountCardsLeft(@PathVariable("game-id") String gameId) {
+        return new ResponseEntity(gameService.getCountCardsLeft(gameId), HttpStatus.OK);
     }
 }

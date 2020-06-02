@@ -7,14 +7,14 @@ import com.game.gamedeck.model.Player;
 import com.game.gamedeck.repositories.GameRepository;
 import com.game.gamedeck.requests.AddPlayerRequest;
 import com.game.gamedeck.requests.CreateGameRequest;
+import com.game.gamedeck.responses.PlayerTotal;
 import com.game.gamedeck.services.GameService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -63,11 +63,40 @@ public class GameServiceImpl implements GameService {
         return repository.save(game);
     }
 
+    public List<PlayerTotal> getPlayersTotals(String gameId) {
+
+        Game game = repository.findById(gameId).
+                orElseThrow(() -> new GameException("Game not found!"));
+
+        return game.getPlayers().stream()
+                .map(this::getTotalsCardsForEachPlayer)
+                .sorted(Comparator.comparing(PlayerTotal::getTotal).reversed())
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Map<String, Long> getCountCardsLeft(String gameId) {
+
+        Game game = repository.findById(gameId).
+                orElseThrow(() -> new GameException("Game not found!"));
+
+        return game.getGameDeckCards().stream()
+                .collect(Collectors.groupingBy(CardEnum::getSuit, Collectors.counting()));
+    }
+
     @Override
     public List<CardEnum> getPlayerCards(String gameId, String playerName) {
 
-        // TODO need to be implemented
-        return new ArrayList<>();
+        Game game = repository.findById(gameId).
+                orElseThrow(() -> new GameException("Game not found!"));
+
+        Player player = game.getPlayers().stream()
+                .filter(p -> p.getName().equalsIgnoreCase(playerName))
+                .findFirst()
+                .orElseThrow(() -> new GameException("player not found!"));
+
+        return player.getOnHandCards();
+
     }
 
     public Game addPlayer(String gameId, AddPlayerRequest addPlayerRequest) {
@@ -108,6 +137,10 @@ public class GameServiceImpl implements GameService {
 
         game.getGameDeckCards().addAll(CardEnum.createDeck());
         return repository.save(game);
+    }
+
+    private int calculatePlayerCards(List<CardEnum> onHandCards) {
+        return onHandCards.stream().mapToInt(card -> card.getValue()).sum();
     }
 
     private void pickCardAndAddToPlayer(Game game, String playerName) {
@@ -163,5 +196,17 @@ public class GameServiceImpl implements GameService {
             throw new GameException(
                     String.format("%s cannot be neither null nor empty", fieldName));
         }
+    }
+
+    private PlayerTotal createPlayerTotal(String playerName, int total) {
+        PlayerTotal playerTotal = new PlayerTotal();
+        playerTotal.setPlayer(playerName);
+        playerTotal.setTotal(total);
+        return playerTotal;
+    }
+
+    private PlayerTotal getTotalsCardsForEachPlayer(Player player) {
+        int total = calculatePlayerCards(player.getOnHandCards());
+        return createPlayerTotal(player.getName(), total);
     }
 }
