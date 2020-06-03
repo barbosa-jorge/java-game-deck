@@ -30,6 +30,7 @@ public class GameServiceImpl implements GameService {
         return repository.findAll();
     }
 
+    @Override
     public Game createGame(CreateGameRequest createGameRequest) {
 
         validateMandatoryRequestFields(createGameRequest);
@@ -58,6 +59,7 @@ public class GameServiceImpl implements GameService {
         return repository.save(game);
     }
 
+    @Override
     public List<PlayerTotal> getPlayersTotals(String gameId) {
         Game game = findGameById(gameId);
 
@@ -67,6 +69,7 @@ public class GameServiceImpl implements GameService {
                 .collect(Collectors.toList());
     }
 
+    @Override
     public Game shuffleCards(String gameId) {
         Game game = findGameById(gameId);
         DeckUtils.shuffleCards(game.getGameDeckCards());
@@ -111,6 +114,7 @@ public class GameServiceImpl implements GameService {
 
     }
 
+    @Override
     public Game addPlayer(String gameId, AddPlayerRequest addPlayerRequest) {
 
         String playerName = addPlayerRequest.getPlayerName();
@@ -126,6 +130,7 @@ public class GameServiceImpl implements GameService {
         return repository.save(game);
     }
 
+    @Override
     public Game removePlayer(String gameId, String playerName) {
         requiredNonEmpty(gameId, "Game Id");
         requiredNonEmpty(playerName, "Player Name");
@@ -136,6 +141,7 @@ public class GameServiceImpl implements GameService {
 
     }
 
+    @Override
     public Game addDeck(String gameId) {
         Game game = findGameById(gameId);
         game.getGameDeckCards().addAll(CardEnum.createDeck());
