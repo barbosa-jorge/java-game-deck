@@ -89,4 +89,9 @@ public class GameController {
         return new ResponseEntity(gameService
                 .getCountRemainingCardsSortedBySuitAndFaceValue(gameId), HttpStatus.OK);
     }
+
+    @PutMapping("/games/{game-id}/decks/shuffle")
+    public ResponseEntity<Game> shuffleCards(@PathVariable("game-id") String gameId) {
+        return new ResponseEntity(gameService.shuffleCards(gameId), HttpStatus.OK);
+    }
 }

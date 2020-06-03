@@ -9,6 +9,7 @@ import com.game.gamedeck.requests.AddPlayerRequest;
 import com.game.gamedeck.requests.CreateGameRequest;
 import com.game.gamedeck.responses.PlayerTotal;
 import com.game.gamedeck.services.GameService;
+import com.game.gamedeck.utils.DeckUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -64,6 +65,12 @@ public class GameServiceImpl implements GameService {
                 .map(this::getTotalsCardsForEachPlayer)
                 .sorted(Comparator.comparing(PlayerTotal::getTotal).reversed())
                 .collect(Collectors.toList());
+    }
+
+    public Game shuffleCards(String gameId) {
+        Game game = findGameById(gameId);
+        DeckUtils.shuffleCards(game.getGameDeckCards());
+        return repository.save(game);
     }
 
     @Override

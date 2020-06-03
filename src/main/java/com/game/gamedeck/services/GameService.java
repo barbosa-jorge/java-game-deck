@@ -11,13 +11,14 @@ import java.util.Map;
 import java.util.TreeMap;
 
 public interface GameService {
-    List<Game> getAllGames();
     Game createGame(CreateGameRequest createGameRequest);
     void deleteGame(String gameId);
     Game dealCards(String gameId, String playerName);
     Game addPlayer(String gameId, AddPlayerRequest addPlayerRequest);
     Game removePlayer(String gameId, String playerName);
     Game addDeck(String gameId);
+    Game shuffleCards(String gameId);
+    List<Game> getAllGames();
     List<CardEnum> getPlayerCards(String gameId, String playerName);
     List<PlayerTotal> getPlayersTotals(String gameId);
     Map<String, Long> getCountCardsLeft(String gameId);
