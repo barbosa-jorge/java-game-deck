@@ -30,5 +30,4 @@ build/
 ### VS Code ###
 .vscode/
 
-/mongodb/
-/docker/mongodb/mongo_data/
+/mongo_data/
