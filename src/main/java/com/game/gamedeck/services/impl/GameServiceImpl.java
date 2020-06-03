@@ -122,8 +122,8 @@ public class GameServiceImpl implements GameService {
     public Game addPlayer(String gameId, AddPlayerRequest addPlayerRequest) {
         String playerName = addPlayerRequest.getPlayerName();
 
-        requiredNonEmpty(gameId, "Game Id");
-        requiredNonEmpty(playerName, "Player Name");
+        requiredNonEmpty(gameId, GameConstants.GAME_ID);
+        requiredNonEmpty(playerName, GameConstants.PLAYER_NAME);
 
         Game game = findGameById(gameId);
         validateExistentPlayerInGame(game, playerName);
@@ -133,8 +133,8 @@ public class GameServiceImpl implements GameService {
 
     @Override
     public Game removePlayer(String gameId, String playerName) {
-        requiredNonEmpty(gameId, "Game Id");
-        requiredNonEmpty(playerName, "Player Name");
+        requiredNonEmpty(gameId, GameConstants.GAME_ID);
+        requiredNonEmpty(playerName, GameConstants.PLAYER_NAME);
 
         Game game = findGameById(gameId);
         game.getPlayers().removeIf(p -> p.getName().equalsIgnoreCase(playerName));
