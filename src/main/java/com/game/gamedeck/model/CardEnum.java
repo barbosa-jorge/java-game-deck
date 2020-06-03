@@ -1,6 +1,6 @@
 package com.game.gamedeck.model;
 
-import com.game.gamedeck.utils.DeckUtils;
+import com.game.gamedeck.shared.utils.DeckUtils;
 
 import java.util.Arrays;
 import java.util.List;

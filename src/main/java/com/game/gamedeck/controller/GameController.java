@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -28,7 +30,7 @@ public class GameController {
     }
 
     @PostMapping("/games")
-    public ResponseEntity<Game> createGame(@RequestBody CreateGameRequest createGameRequest) {
+    public ResponseEntity<Game> createGame(@Valid @RequestBody CreateGameRequest createGameRequest) {
         return new ResponseEntity<>(gameService.createGame(createGameRequest), HttpStatus.CREATED);
     }
 
@@ -41,14 +43,12 @@ public class GameController {
     @PutMapping("/games/{game-id}/players/{player-name}/deal-cards")
     public ResponseEntity<Game> dealCards(@PathVariable("game-id") String gameId,
                                           @PathVariable("player-name") String playerName) {
-
         return new ResponseEntity<>(gameService.dealCards(gameId, playerName), HttpStatus.OK);
     }
 
     @PostMapping("/games/{game-id}/players")
     public ResponseEntity<Game> addPlayer(@PathVariable("game-id") String gameId,
-                                          @RequestBody AddPlayerRequest addPlayerRequest) {
-
+                                          @Valid @RequestBody AddPlayerRequest addPlayerRequest) {
         return new ResponseEntity<>(gameService.addPlayer(gameId, addPlayerRequest),
                 HttpStatus.OK);
     }

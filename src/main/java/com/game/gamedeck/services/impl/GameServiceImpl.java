@@ -1,6 +1,7 @@
 package com.game.gamedeck.services.impl;
 
 import com.game.gamedeck.exceptions.GameException;
+import com.game.gamedeck.exceptions.NotFoundException;
 import com.game.gamedeck.model.CardEnum;
 import com.game.gamedeck.model.Game;
 import com.game.gamedeck.model.Player;
@@ -9,9 +10,9 @@ import com.game.gamedeck.requests.AddPlayerRequest;
 import com.game.gamedeck.requests.CreateGameRequest;
 import com.game.gamedeck.responses.PlayerTotal;
 import com.game.gamedeck.services.GameService;
-import com.game.gamedeck.shared.AppErrorConstants;
-import com.game.gamedeck.shared.GameConstants;
-import com.game.gamedeck.utils.DeckUtils;
+import com.game.gamedeck.shared.constants.AppErrorConstants;
+import com.game.gamedeck.shared.constants.GameConstants;
+import com.game.gamedeck.shared.utils.DeckUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -41,8 +42,6 @@ public class GameServiceImpl implements GameService {
 
     @Override
     public Game createGame(CreateGameRequest createGameRequest) {
-        validateMandatoryRequestFields(createGameRequest);
-
         Game game = new Game();
         addPlayersToGame(createGameRequest.getPlayers(), game);
         addCardsToGameDeck(createGameRequest.getNumberOfDecks(), game);
@@ -62,6 +61,8 @@ public class GameServiceImpl implements GameService {
         requiredNonEmpty(playerName, GameConstants.PLAYER_NAME);
 
         Game game = findGameById(gameId);
+        validatePlayer(game.getPlayers(), playerName);
+
         pickCardAndAddToPlayer(game, playerName);
         return repository.save(game);
     }
@@ -112,7 +113,7 @@ public class GameServiceImpl implements GameService {
         Player player = game.getPlayers().stream()
             .filter(p -> p.getName().equalsIgnoreCase(playerName))
             .findFirst()
-            .orElseThrow(() -> new GameException(buildErrorMessage(
+            .orElseThrow(() -> new NotFoundException(buildErrorMessage(
                 AppErrorConstants.ERROR_PLAYER_NOT_FOUND, NO_PARAMS)));
 
         return player.getOnHandCards();
@@ -120,13 +121,13 @@ public class GameServiceImpl implements GameService {
 
     @Override
     public Game addPlayer(String gameId, AddPlayerRequest addPlayerRequest) {
-        String playerName = addPlayerRequest.getPlayerName();
-
         requiredNonEmpty(gameId, GameConstants.GAME_ID);
-        requiredNonEmpty(playerName, GameConstants.PLAYER_NAME);
 
+        String playerName = addPlayerRequest.getPlayerName();
         Game game = findGameById(gameId);
-        validateExistentPlayerInGame(game, playerName);
+
+        validateExistentPlayerInGame(game.getPlayers(), playerName);
+
         game.getPlayers().add(new Player(playerName));
         return repository.save(game);
     }
@@ -186,17 +187,6 @@ public class GameServiceImpl implements GameService {
         game.setGameDeckCards(gameDeckCards);
     }
 
-    private void validateMandatoryRequestFields(CreateGameRequest request) {
-        if (request.getNumberOfDecks() < 1) {
-            throw new GameException(buildErrorMessage(
-                AppErrorConstants.ERROR_ADD_DECK_TO_GAME, NO_PARAMS));
-        }
-        if (CollectionUtils.isEmpty(request.getPlayers())) {
-            throw new GameException(buildErrorMessage(
-                AppErrorConstants.ERROR_ADD_PLAYER_TO_GAME, NO_PARAMS));
-        }
-    }
-
     private void requiredNonEmpty(String fieldValue, String fieldName) {
         if (StringUtils.isEmpty(fieldValue)) {
             throw new GameException(buildErrorMessage(
@@ -219,15 +209,8 @@ public class GameServiceImpl implements GameService {
 
     private Game findGameById(String gameId) {
         return repository.findById(gameId)
-            .orElseThrow(() -> new GameException(buildErrorMessage(
+            .orElseThrow(() -> new NotFoundException(buildErrorMessage(
                 AppErrorConstants.ERROR_GAME_NOT_FOUND, NO_PARAMS)));
-    }
-
-    private void validateExistentPlayerInGame(Game game, String playerName) {
-        if (game.getPlayers().contains(playerName)) {
-            throw new GameException(buildErrorMessage(
-                AppErrorConstants.ERROR_USER_ALREADY_EXISTS, new Object[]{ playerName }));
-        }
     }
 
     private void validateAvailableCards(Game game) {
@@ -240,5 +223,23 @@ public class GameServiceImpl implements GameService {
     private String buildErrorMessage(String errorBundleKey, Object[] params) {
         return messageSource.getMessage(errorBundleKey, params,
             LocaleContextHolder.getLocale());
+    }
+
+    private void validatePlayer(List<Player> players, String playerName) {
+        if (!isExistentPlayer(players, playerName)) {
+            throw new NotFoundException(buildErrorMessage(
+                    AppErrorConstants.ERROR_PLAYER_NOT_FOUND, NO_PARAMS));
+        }
+    }
+
+    private void validateExistentPlayerInGame(List<Player> players, String playerName) {
+        if (isExistentPlayer(players, playerName)) {
+            throw new GameException(buildErrorMessage(
+                    AppErrorConstants.ERROR_USER_ALREADY_EXISTS, new Object[]{ playerName }));
+        }
+    }
+
+    private boolean isExistentPlayer(List<Player> players, String playerName) {
+        return players.stream().anyMatch(p -> p.getName().equalsIgnoreCase(playerName));
     }
 }

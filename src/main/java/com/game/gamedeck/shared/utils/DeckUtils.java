@@ -1,4 +1,4 @@
-package com.game.gamedeck.utils;
+package com.game.gamedeck.shared.utils;
 
 import com.game.gamedeck.model.CardEnum;
 import org.springframework.util.CollectionUtils;
