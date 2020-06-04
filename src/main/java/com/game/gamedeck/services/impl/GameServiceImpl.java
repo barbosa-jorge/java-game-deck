@@ -51,8 +51,9 @@ public class GameServiceImpl implements GameService {
     @Override
     public void deleteGame(String gameId) {
         requiredNonEmpty(gameId, GameConstants.GAME_ID);
-        Game game = findGameById(gameId);
-        repository.delete(game);
+        repository.delete(gameId)
+            .orElseThrow(() -> new NotFoundException(buildErrorMessage(
+                AppErrorConstants.ERROR_GAME_NOT_FOUND, NO_PARAMS)));
     }
 
     @Override
@@ -69,9 +70,10 @@ public class GameServiceImpl implements GameService {
 
     @Override
     public List<PlayerTotal> getPlayersTotals(String gameId) {
-        Game game = findGameById(gameId);
 
-        return game.getPlayers().stream()
+        List<Player> players = getGamePrayers(gameId);
+
+        return players.stream()
                 .map(this::getTotalsCardsForEachPlayer)
                 .sorted(Comparator.comparing(PlayerTotal::getTotal).reversed())
                 .collect(Collectors.toList());
@@ -79,28 +81,33 @@ public class GameServiceImpl implements GameService {
 
     @Override
     public Game shuffleCards(String gameId) {
-        Game game = findGameById(gameId);
-        DeckUtils.shuffleCards(game.getGameDeckCards());
-        return repository.save(game);
+        List<CardEnum> gameCards = getGameCards(gameId);
+        DeckUtils.shuffleCards(gameCards);
+
+        return repository.updateGameCards(gameId, gameCards)
+                .orElseThrow(() -> new NotFoundException(buildErrorMessage(
+                        AppErrorConstants.ERROR_GAME_NOT_FOUND, NO_PARAMS)));
     }
 
     @Override
     public Map<String, Long> getCountCardsLeft(String gameId) {
-        Game game = findGameById(gameId);
 
-        return game.getGameDeckCards().stream()
+        List<CardEnum> gameCards = getGameCards(gameId);
+
+        return gameCards.stream()
                 .collect(Collectors.groupingBy(CardEnum::getSuit, Collectors.counting()));
     }
 
     @Override
     public TreeMap<CardEnum, Long> getCountRemainingCardsSortedBySuitAndFaceValue(String gameId) {
-        Game game = findGameById(gameId);
 
         Comparator<CardEnum> sortBySuit = Comparator.comparing(CardEnum::getSuit);
         Comparator<CardEnum> sortByValueDesc = Comparator.comparing(CardEnum::getValue).reversed();
         Comparator<CardEnum> sortBySuitAndValueDesc = sortBySuit.thenComparing(sortByValueDesc);
 
-        return game.getGameDeckCards().stream()
+        List<CardEnum> gameCards = getGameCards(gameId);
+
+        return gameCards.stream()
             .collect(Collectors.groupingBy(Function.identity(),
                 () -> new TreeMap<>(sortBySuitAndValueDesc),
                     Collectors.counting()));
@@ -108,15 +115,10 @@ public class GameServiceImpl implements GameService {
 
     @Override
     public List<CardEnum> getPlayerCards(String gameId, String playerName) {
-        Game game = findGameById(gameId);
-
-        Player player = game.getPlayers().stream()
-            .filter(p -> p.getName().equalsIgnoreCase(playerName))
-            .findFirst()
-            .orElseThrow(() -> new NotFoundException(buildErrorMessage(
-                AppErrorConstants.ERROR_PLAYER_NOT_FOUND, NO_PARAMS)));
-
-        return player.getOnHandCards();
+        return repository.findGameOnlyWithPlayer(gameId, playerName)
+                .orElseThrow(() -> new NotFoundException(buildErrorMessage(
+                        AppErrorConstants.ERROR_PLAYER_NOT_FOUND, NO_PARAMS)))
+                .getPlayers().get(0).getOnHandCards();
     }
 
     @Override
@@ -124,12 +126,10 @@ public class GameServiceImpl implements GameService {
         requiredNonEmpty(gameId, GameConstants.GAME_ID);
 
         String playerName = addPlayerRequest.getPlayerName();
-        Game game = findGameById(gameId);
+        validateExistentPlayerInGame(gameId, playerName);
 
-        validateExistentPlayerInGame(game.getPlayers(), playerName);
+        return repository.addNewPlayer(gameId, playerName).get();
 
-        game.getPlayers().add(new Player(playerName));
-        return repository.save(game);
     }
 
     @Override
@@ -137,16 +137,16 @@ public class GameServiceImpl implements GameService {
         requiredNonEmpty(gameId, GameConstants.GAME_ID);
         requiredNonEmpty(playerName, GameConstants.PLAYER_NAME);
 
-        Game game = findGameById(gameId);
-        game.getPlayers().removeIf(p -> p.getName().equalsIgnoreCase(playerName));
-        return repository.save(game);
+        return repository.removePlayer(gameId, playerName)
+                .orElseThrow(() -> new NotFoundException(buildErrorMessage(
+                        AppErrorConstants.ERROR_GAME_NOT_FOUND, NO_PARAMS)));
     }
 
     @Override
     public Game addDeck(String gameId) {
-        Game game = findGameById(gameId);
-        game.getGameDeckCards().addAll(CardEnum.createDeck());
-        return repository.save(game);
+        return repository.addNewDeck(gameId, CardEnum.createDeck())
+                .orElseThrow(() -> new NotFoundException(buildErrorMessage(
+                        AppErrorConstants.ERROR_GAME_NOT_FOUND, NO_PARAMS)));
     }
 
     private int calculatePlayerCards(List<CardEnum> onHandCards) {
@@ -232,14 +232,32 @@ public class GameServiceImpl implements GameService {
         }
     }
 
-    private void validateExistentPlayerInGame(List<Player> players, String playerName) {
-        if (isExistentPlayer(players, playerName)) {
+    private void validateExistentPlayerInGame(String gameId, String playerName) {
+
+        boolean isPlayerAlreadyInGame = repository.isPlayerExists(gameId, playerName);
+
+        if (isPlayerAlreadyInGame) {
             throw new GameException(buildErrorMessage(
                     AppErrorConstants.ERROR_USER_ALREADY_EXISTS, new Object[]{ playerName }));
         }
     }
 
     private boolean isExistentPlayer(List<Player> players, String playerName) {
-        return players.stream().anyMatch(p -> p.getName().equalsIgnoreCase(playerName));
+        return players.stream()
+                .anyMatch(p -> p.getName().equalsIgnoreCase(playerName));
+    }
+
+    private List<Player> getGamePrayers(String gameId) {
+        return repository.findGameOnlyWithPlayers(gameId)
+                .orElseThrow(() -> new NotFoundException(buildErrorMessage(
+                        AppErrorConstants.ERROR_GAME_NOT_FOUND, NO_PARAMS)))
+                .getPlayers();
+    }
+
+    private List<CardEnum> getGameCards(String gameId) {
+        return repository.findGameOnlyWithCards(gameId)
+                .orElseThrow(() -> new NotFoundException(buildErrorMessage(
+                        AppErrorConstants.ERROR_GAME_NOT_FOUND, NO_PARAMS)))
+                .getGameDeckCards();
     }
 }
