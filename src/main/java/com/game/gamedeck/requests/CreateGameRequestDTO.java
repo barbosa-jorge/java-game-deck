@@ -1,6 +1,5 @@
 package com.game.gamedeck.requests;
 
-import com.game.gamedeck.shared.constants.AppErrorConstants;
 import lombok.Data;
 
 import javax.validation.Valid;
@@ -12,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Data
-public class CreateGameRequest {
+public class CreateGameRequestDTO {
     @NotEmpty(message = "{error.add.player.to.game}")
     private List<@Valid @Size(min = 3, message="{error.player.name.min.size}") String> players =
             new ArrayList<>();

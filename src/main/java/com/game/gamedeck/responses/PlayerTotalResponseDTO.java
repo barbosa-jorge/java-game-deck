@@ -3,7 +3,7 @@ package com.game.gamedeck.responses;
 import lombok.Data;
 
 @Data
-public class PlayerTotal {
+public class PlayerTotalResponseDTO {
     private String player;
     private Integer total;
 }

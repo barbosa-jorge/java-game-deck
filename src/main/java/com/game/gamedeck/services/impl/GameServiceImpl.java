@@ -6,13 +6,15 @@ import com.game.gamedeck.model.CardEnum;
 import com.game.gamedeck.model.Game;
 import com.game.gamedeck.model.Player;
 import com.game.gamedeck.repositories.GameRepository;
-import com.game.gamedeck.requests.AddPlayerRequest;
-import com.game.gamedeck.requests.CreateGameRequest;
-import com.game.gamedeck.responses.PlayerTotal;
+import com.game.gamedeck.requests.AddPlayerRequestDTO;
+import com.game.gamedeck.requests.CreateGameRequestDTO;
+import com.game.gamedeck.responses.GameResponseDTO;
+import com.game.gamedeck.responses.PlayerTotalResponseDTO;
 import com.game.gamedeck.services.GameService;
 import com.game.gamedeck.shared.constants.AppErrorConstants;
 import com.game.gamedeck.shared.constants.GameConstants;
 import com.game.gamedeck.shared.utils.DeckUtils;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -35,17 +37,25 @@ public class GameServiceImpl implements GameService {
     @Autowired
     private MessageSource messageSource;
 
+    @Autowired
+    private ModelMapper modelMapper;
+
     @Override
-    public List<Game> getAllGames() {
-        return repository.findAll();
+    public List<GameResponseDTO> getAllGames() {
+        return repository.findAll().stream()
+                .map(game -> modelMapper.map(game, GameResponseDTO.class))
+                .collect(Collectors.toList());
     }
 
     @Override
-    public Game createGame(CreateGameRequest createGameRequest) {
+    public GameResponseDTO createGame(CreateGameRequestDTO createGameRequestDTO) {
         Game game = new Game();
-        addPlayersToGame(createGameRequest.getPlayers(), game);
-        addCardsToGameDeck(createGameRequest.getNumberOfDecks(), game);
-        return repository.save(game);
+        addPlayersToGame(createGameRequestDTO.getPlayers(), game);
+        addCardsToGameDeck(createGameRequestDTO.getNumberOfDecks(), game);
+
+        return repository.save(game)
+                .map(savedGame -> modelMapper.map(savedGame, GameResponseDTO.class))
+                .get();
     }
 
     @Override
@@ -57,36 +67,40 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
-    public Game dealCards(String gameId, String playerName) {
+    public GameResponseDTO dealCards(String gameId, String playerName) {
         requiredNonEmpty(gameId, GameConstants.GAME_ID);
         requiredNonEmpty(playerName, GameConstants.PLAYER_NAME);
 
         Game game = findGameById(gameId);
         validatePlayer(game.getPlayers(), playerName);
-
         pickCardAndAddToPlayer(game, playerName);
-        return repository.save(game);
+
+        return repository.save(game)
+                .map(savedGame -> modelMapper.map(savedGame, GameResponseDTO.class))
+                .get();
     }
 
     @Override
-    public List<PlayerTotal> getPlayersTotals(String gameId) {
+    public List<PlayerTotalResponseDTO> getPlayersTotals(String gameId) {
 
         List<Player> players = getGamePrayers(gameId);
 
         return players.stream()
                 .map(this::getTotalsCardsForEachPlayer)
-                .sorted(Comparator.comparing(PlayerTotal::getTotal).reversed())
+                .sorted(Comparator.comparing(PlayerTotalResponseDTO::getTotal).reversed())
                 .collect(Collectors.toList());
     }
 
     @Override
-    public Game shuffleCards(String gameId) {
+    public GameResponseDTO shuffleCards(String gameId) {
         List<CardEnum> gameCards = getGameCards(gameId);
         DeckUtils.shuffleCards(gameCards);
 
-        return repository.updateGameCards(gameId, gameCards)
+        Game savedGame = repository.updateGameCards(gameId, gameCards)
                 .orElseThrow(() -> new NotFoundException(buildErrorMessage(
                         AppErrorConstants.ERROR_GAME_NOT_FOUND, NO_PARAMS)));
+
+        return modelMapper.map(savedGame, GameResponseDTO.class);
     }
 
     @Override
@@ -122,31 +136,36 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
-    public Game addPlayer(String gameId, AddPlayerRequest addPlayerRequest) {
+    public GameResponseDTO addPlayer(String gameId, AddPlayerRequestDTO addPlayerRequestDTO) {
         requiredNonEmpty(gameId, GameConstants.GAME_ID);
 
-        String playerName = addPlayerRequest.getPlayerName();
+        String playerName = addPlayerRequestDTO.getPlayerName();
         validateExistentPlayerInGame(gameId, playerName);
 
-        return repository.addNewPlayer(gameId, playerName).get();
-
+        return repository.addNewPlayer(gameId, playerName)
+                .map(updatedGame -> modelMapper.map(updatedGame, GameResponseDTO.class))
+                .get();
     }
 
     @Override
-    public Game removePlayer(String gameId, String playerName) {
+    public GameResponseDTO removePlayer(String gameId, String playerName) {
         requiredNonEmpty(gameId, GameConstants.GAME_ID);
         requiredNonEmpty(playerName, GameConstants.PLAYER_NAME);
 
-        return repository.removePlayer(gameId, playerName)
+        Game updatedGame = repository.removePlayer(gameId, playerName)
                 .orElseThrow(() -> new NotFoundException(buildErrorMessage(
                         AppErrorConstants.ERROR_GAME_NOT_FOUND, NO_PARAMS)));
+
+        return modelMapper.map(updatedGame, GameResponseDTO.class);
     }
 
     @Override
-    public Game addDeck(String gameId) {
-        return repository.addNewDeck(gameId, CardEnum.createDeck())
+    public GameResponseDTO addDeck(String gameId) {
+        Game updatedGame = repository.addNewDeck(gameId, CardEnum.createDeck())
                 .orElseThrow(() -> new NotFoundException(buildErrorMessage(
                         AppErrorConstants.ERROR_GAME_NOT_FOUND, NO_PARAMS)));
+
+        return modelMapper.map(updatedGame, GameResponseDTO.class);
     }
 
     private int calculatePlayerCards(List<CardEnum> onHandCards) {
@@ -195,14 +214,14 @@ public class GameServiceImpl implements GameService {
         }
     }
 
-    private PlayerTotal createPlayerTotal(String playerName, int total) {
-        PlayerTotal playerTotal = new PlayerTotal();
-        playerTotal.setPlayer(playerName);
-        playerTotal.setTotal(total);
-        return playerTotal;
+    private PlayerTotalResponseDTO createPlayerTotal(String playerName, int total) {
+        PlayerTotalResponseDTO playerTotalResponseDTO = new PlayerTotalResponseDTO();
+        playerTotalResponseDTO.setPlayer(playerName);
+        playerTotalResponseDTO.setTotal(total);
+        return playerTotalResponseDTO;
     }
 
-    private PlayerTotal getTotalsCardsForEachPlayer(Player player) {
+    private PlayerTotalResponseDTO getTotalsCardsForEachPlayer(Player player) {
         int total = calculatePlayerCards(player.getOnHandCards());
         return createPlayerTotal(player.getName(), total);
     }

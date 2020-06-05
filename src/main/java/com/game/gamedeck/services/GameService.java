@@ -1,26 +1,26 @@
 package com.game.gamedeck.services;
 
 import com.game.gamedeck.model.CardEnum;
-import com.game.gamedeck.model.Game;
-import com.game.gamedeck.requests.AddPlayerRequest;
-import com.game.gamedeck.requests.CreateGameRequest;
-import com.game.gamedeck.responses.PlayerTotal;
+import com.game.gamedeck.requests.AddPlayerRequestDTO;
+import com.game.gamedeck.requests.CreateGameRequestDTO;
+import com.game.gamedeck.responses.GameResponseDTO;
+import com.game.gamedeck.responses.PlayerTotalResponseDTO;
 
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
 public interface GameService {
-    Game createGame(CreateGameRequest createGameRequest);
+    GameResponseDTO createGame(CreateGameRequestDTO createGameRequestDTO);
     void deleteGame(String gameId);
-    Game dealCards(String gameId, String playerName);
-    Game addPlayer(String gameId, AddPlayerRequest addPlayerRequest);
-    Game removePlayer(String gameId, String playerName);
-    Game addDeck(String gameId);
-    Game shuffleCards(String gameId);
-    List<Game> getAllGames();
+    GameResponseDTO dealCards(String gameId, String playerName);
+    GameResponseDTO addPlayer(String gameId, AddPlayerRequestDTO addPlayerRequestDTO);
+    GameResponseDTO removePlayer(String gameId, String playerName);
+    GameResponseDTO addDeck(String gameId);
+    GameResponseDTO shuffleCards(String gameId);
+    List<GameResponseDTO> getAllGames();
     List<CardEnum> getPlayerCards(String gameId, String playerName);
-    List<PlayerTotal> getPlayersTotals(String gameId);
+    List<PlayerTotalResponseDTO> getPlayersTotals(String gameId);
     Map<String, Long> getCountCardsLeft(String gameId);
     TreeMap<CardEnum, Long> getCountRemainingCardsSortedBySuitAndFaceValue(String gameId);
 }

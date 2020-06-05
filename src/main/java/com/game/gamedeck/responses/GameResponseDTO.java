@@ -10,10 +10,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
-public class CreateGameResponse {
-    private String gameId;
-    private List<CardEnum> deckCards = new ArrayList<>();
+@NoArgsConstructor
+public class GameResponseDTO {
+    private String id;
+    private List<CardEnum> gameDeckCards = new ArrayList<>();
     private List<Player> players = new ArrayList<>();
 }
+

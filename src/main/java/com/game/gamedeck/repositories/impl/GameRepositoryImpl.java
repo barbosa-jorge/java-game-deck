@@ -21,13 +21,15 @@ public class GameRepositoryImpl implements GameRepository {
 
     public static final String GAME = "game";
     public static final String ID = "id";
+    private static final FindAndModifyOptions FIND_AND_MODIFY_OPTIONS_RETURN_TRUE = FindAndModifyOptions
+            .options().returnNew(true);
 
     @Autowired
     private MongoTemplate mongoTemplate;
 
     @Override
-    public Game save(Game game) {
-        return mongoTemplate.save(game, GAME);
+    public Optional<Game> save(Game game) {
+        return Optional.ofNullable(mongoTemplate.save(game, GAME));
     }
 
     @Override
@@ -88,16 +90,18 @@ public class GameRepositoryImpl implements GameRepository {
     public Optional<Game> updateGameCards(String gameId, List<CardEnum> cards) {
         Query query = Query.query(Criteria.where("_id").is(gameId));
         Update update = Update.update("gameDeckCards", cards);
+
         Game updatedGame = mongoTemplate.findAndModify(query, update,
-                FindAndModifyOptions.options().returnNew(true), Game.class);
+                FIND_AND_MODIFY_OPTIONS_RETURN_TRUE, Game.class);
         return Optional.ofNullable(updatedGame);
     }
 
     public Optional<Game> addNewPlayer(String gameId, String playerName) {
         Query query = Query.query(Criteria.where("_id").is(gameId));
         Update update = new Update().push("players", new Player(playerName));
+
         Game updatedGame =  mongoTemplate.findAndModify(query, update,
-                FindAndModifyOptions.options().returnNew(true), Game.class);
+                FIND_AND_MODIFY_OPTIONS_RETURN_TRUE, Game.class);
 
         return Optional.ofNullable(updatedGame);
     }
@@ -105,8 +109,9 @@ public class GameRepositoryImpl implements GameRepository {
     public Optional<Game> removePlayer(String gameId, String playerName) {
         Query query = Query.query(Criteria.where("_id").is(gameId).and("players.name").is(playerName));
         Update update = new Update().pull("players", new BasicDBObject("name", playerName));
+
         Game updatedGame = mongoTemplate.findAndModify(query, update,
-                FindAndModifyOptions.options().returnNew(true), Game.class);
+                FIND_AND_MODIFY_OPTIONS_RETURN_TRUE, Game.class);
         return Optional.ofNullable(updatedGame);
     }
 
@@ -114,8 +119,9 @@ public class GameRepositoryImpl implements GameRepository {
     public Optional<Game> addNewDeck(String gameId, List<CardEnum> cards) {
         Query query = Query.query(Criteria.where("_id").is(gameId));
         Update update = new Update().push("gameDeckCards").each(cards);
+
         Game updatedGame = mongoTemplate.findAndModify(query, update,
-                FindAndModifyOptions.options().returnNew(true), Game.class);
+                FIND_AND_MODIFY_OPTIONS_RETURN_TRUE, Game.class);
         return Optional.ofNullable(updatedGame);
     }
 }
