@@ -1,7 +1,9 @@
 # Game Deck of Cards
+This project is a set of endpoint APIs representing a simple Game of Cards.
 
-Java 8
-Spring Boot
+# Stack
+Java 8,
+Spring Boot,
 Spring Data MongoDB (MongoTemplate)
 
 # Starting Application 
