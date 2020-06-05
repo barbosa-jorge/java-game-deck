@@ -4,6 +4,7 @@ import com.game.gamedeck.model.CardEnum;
 import com.game.gamedeck.requests.AddPlayerRequestDTO;
 import com.game.gamedeck.requests.CreateGameRequestDTO;
 import com.game.gamedeck.responses.GameResponseDTO;
+import com.game.gamedeck.responses.OperationStatus;
 import com.game.gamedeck.responses.PlayerTotalResponseDTO;
 
 import java.util.List;
@@ -12,7 +13,7 @@ import java.util.TreeMap;
 
 public interface GameService {
     GameResponseDTO createGame(CreateGameRequestDTO createGameRequestDTO);
-    void deleteGame(String gameId);
+    OperationStatus deleteGame(String gameId);
     GameResponseDTO dealCards(String gameId, String playerName);
     GameResponseDTO addPlayer(String gameId, AddPlayerRequestDTO addPlayerRequestDTO);
     GameResponseDTO removePlayer(String gameId, String playerName);

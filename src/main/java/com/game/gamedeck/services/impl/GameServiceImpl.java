@@ -9,10 +9,13 @@ import com.game.gamedeck.repositories.GameRepository;
 import com.game.gamedeck.requests.AddPlayerRequestDTO;
 import com.game.gamedeck.requests.CreateGameRequestDTO;
 import com.game.gamedeck.responses.GameResponseDTO;
+import com.game.gamedeck.responses.OperationStatus;
 import com.game.gamedeck.responses.PlayerTotalResponseDTO;
 import com.game.gamedeck.services.GameService;
 import com.game.gamedeck.shared.constants.AppErrorConstants;
 import com.game.gamedeck.shared.constants.GameConstants;
+import com.game.gamedeck.shared.constants.RequestOperationName;
+import com.game.gamedeck.shared.constants.RequestOperationStatus;
 import com.game.gamedeck.shared.utils.DeckUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,11 +62,13 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
-    public void deleteGame(String gameId) {
+    public OperationStatus deleteGame(String gameId) {
         requiredNonEmpty(gameId, GameConstants.GAME_ID);
         repository.delete(gameId)
             .orElseThrow(() -> new NotFoundException(buildErrorMessage(
                 AppErrorConstants.ERROR_GAME_NOT_FOUND, NO_PARAMS)));
+
+        return new OperationStatus(RequestOperationStatus.SUCCESS, RequestOperationName.DELETE);
     }
 
     @Override
