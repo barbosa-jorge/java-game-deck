@@ -7,7 +7,7 @@ Spring Boot,
 Spring Data MongoDB (MongoTemplate)
 
 # Starting Application 
-mvn springboot::run 
+mvn spring-boot:run 
 or
 run GamedeckApplication class
 
