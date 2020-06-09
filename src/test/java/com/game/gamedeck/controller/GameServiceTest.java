@@ -1,6 +1,7 @@
 package com.game.gamedeck.controller;
 
 import com.game.gamedeck.exceptions.GameException;
+import com.game.gamedeck.model.Card;
 import com.game.gamedeck.model.CardEnum;
 import com.game.gamedeck.model.Game;
 import com.game.gamedeck.model.Player;
@@ -35,9 +36,17 @@ import static org.mockito.BDDMockito.*;
 
 public class GameServiceTest {
 
-    public static final String GAME_ID = "5ed98daf2cd10901dc4f8422";
+    private static final Card CARD_ACE_CLUBS = new Card(1,"CLUBS","A");
+    private static final Card CARD_ACE_HEARTS = new Card(1,"HEARTS","A");
+    private static final Card CARD_TWO_HEARTS = new Card(2, "HEARTS", "2");
     public static final String PLAYER_NAME_JORGE = "jorge";
     public static final String PLAYER_NAME_MARIA = "maria";
+    private static final Player PLAYER_JORGE = new Player(PLAYER_NAME_JORGE);
+    private static final String URI_API_GAMES = "/api/games";
+    public static final String GAME_ID = "5ed98daf2cd10901dc4f8422";
+    public static final int NUMBER_OF_DECKS = 1;
+    public static final String SUIT_HEARTS = "HEARTS";
+    public static final String SUIT_CLUBS = "CLUBS";
 
     @InjectMocks
     private GameServiceImpl gameService;
@@ -58,8 +67,8 @@ public class GameServiceTest {
     @Before
     public void setup() {
         MockitoAnnotations.initMocks(this);
-        List<CardEnum> mockedGameCards = getMockedGameCards(CardEnum.ACE_HEARTS, CardEnum.ACE_CLUBS);
-        Player mockedPlayer = getMockedPlayer(PLAYER_NAME_JORGE, CardEnum.TWO_HEARTS);
+        List<Card> mockedGameCards = getMockedGameCards(CARD_ACE_HEARTS, CARD_ACE_CLUBS);
+        Player mockedPlayer = getMockedPlayer(PLAYER_NAME_JORGE, CARD_TWO_HEARTS);
         this.mockedGame = createMockedGame(mockedGameCards, mockedPlayer);
         this.expectedGameResDTO = getMockedGameResponseDTO(mockedGameCards, mockedPlayer);
     }
@@ -68,11 +77,11 @@ public class GameServiceTest {
     public void givenValidCreateGameRequestDTO_thenCreateGameSuccessfully() {
 
         // GIVEN
-        List<CardEnum> mockedGameCards = getMockedGameCards(CardEnum.ACE_HEARTS, CardEnum.ACE_CLUBS);
-        Player mockedPlayer = getMockedPlayer(PLAYER_NAME_JORGE, CardEnum.TWO_HEARTS);
+        List<Card> mockedGameCards = getMockedGameCards(CARD_ACE_HEARTS, CARD_ACE_CLUBS);
+        Player mockedPlayer = getMockedPlayer(PLAYER_NAME_JORGE, CARD_TWO_HEARTS);
         Game mockedGame = createMockedGame(mockedGameCards, mockedPlayer);
         GameResponseDTO mockedGameResponseDTO = getMockedGameResponseDTO(mockedGameCards, mockedPlayer);
-        CreateGameRequestDTO createGameRequestDTO = getCreateGameRequestDTO(1, PLAYER_NAME_JORGE);
+        CreateGameRequestDTO createGameRequestDTO = getCreateGameRequestDTO(NUMBER_OF_DECKS, PLAYER_NAME_JORGE);
 
         given(gameRepository.save(any())).willReturn(Optional.ofNullable(mockedGame));
         given(mapper.map(any(), any())).willReturn(mockedGameResponseDTO);
@@ -83,7 +92,7 @@ public class GameServiceTest {
         // THEN
         then(gameRepository).should().save(any());
         assertEquals(mockedGameResponseDTO.getId(), response.getId());
-        assertEquals(mockedGameResponseDTO.getGameDeckCards(), response.getGameDeckCards());
+        assertEquals(mockedGameResponseDTO.getGameCards(), response.getGameCards());
         assertEquals(mockedGameResponseDTO.getPlayers(), response.getPlayers());
     }
 
@@ -155,7 +164,7 @@ public class GameServiceTest {
 
         // When
         GameResponseDTO gameResponseDTO = gameService.dealCards(GAME_ID, PLAYER_NAME_JORGE);
-        List<CardEnum> playerOneOnHandCards = gameResponseDTO.getPlayers().get(0).getOnHandCards();
+        List<Card> playerOneOnHandCards = gameResponseDTO.getPlayers().get(0).getOnHandCards();
 
         // Then
         then(gameRepository).should().save(gameArgumentCaptor.capture());
@@ -185,14 +194,14 @@ public class GameServiceTest {
     public void givenValidGameId_whenCallShuffleCards_thenShuffleGameCards() {
 
         // Given
-        List<CardEnum> gameDeckCards = Optional.ofNullable(this.mockedGame).get().getGameDeckCards();
+        List<Card> gameDeckCards = Optional.ofNullable(this.mockedGame).get().getGameCards();
         given(gameRepository.findGameOnlyWithCards(anyString())).willReturn(Optional.ofNullable(this.mockedGame));
         given(gameRepository.updateGameCards(anyString(), any())).willReturn(Optional.ofNullable(this.mockedGame));
         given(mapper.map(any(), any())).willReturn(this.expectedGameResDTO);
 
         // When
         GameResponseDTO gameResponseDTO = gameService.shuffleCards(GAME_ID);
-        List<CardEnum> afterShuffleCards = gameResponseDTO.getGameDeckCards();
+        List<Card> afterShuffleCards = gameResponseDTO.getGameCards();
 
         // Then
         assertThat(afterShuffleCards, hasSize(gameDeckCards.size()));
@@ -209,18 +218,18 @@ public class GameServiceTest {
         given(mapper.map(any(), any())).willReturn(this.expectedGameResDTO);
 
         // When
-        Map<String, Long> countCardsLeft = gameService.getCountCardsLeft(GAME_ID);
+        Map<String, Long> countCardsLeft = gameService.getCardsLeftBySuitUsingCollectors(GAME_ID);
 
         // Then
         assertThat(countCardsLeft, is(aMapWithSize(2)));
-        assertThat(countCardsLeft, hasKey( equalTo("HEARTS")));
-        assertThat(countCardsLeft, hasKey( equalTo("CLUBS")));
+        assertThat(countCardsLeft, hasKey( equalTo(SUIT_HEARTS)));
+        assertThat(countCardsLeft, hasKey( equalTo(SUIT_CLUBS)));
         assertThat(countCardsLeft, hasValue(equalTo(1L)));
         assertThat(countCardsLeft, hasValue(equalTo(1L)));
-        assertThat(countCardsLeft, hasEntry("HEARTS", 1L));
-        assertThat(countCardsLeft, hasEntry("CLUBS", 1L));
-        assertThat(countCardsLeft, IsMapContaining.hasEntry("HEARTS", 1L));
-        assertThat(countCardsLeft, IsMapContaining.hasEntry("CLUBS", 1L));
+        assertThat(countCardsLeft, hasEntry(SUIT_HEARTS, 1L));
+        assertThat(countCardsLeft, hasEntry(SUIT_CLUBS, 1L));
+        assertThat(countCardsLeft, IsMapContaining.hasEntry(SUIT_HEARTS, 1L));
+        assertThat(countCardsLeft, IsMapContaining.hasEntry(SUIT_CLUBS, 1L));
 
     }
 
@@ -231,11 +240,11 @@ public class GameServiceTest {
         given(gameRepository.findGameOnlyWithCards(anyString())).willReturn(Optional.ofNullable(this.mockedGame));
 
         // When
-        TreeMap<CardEnum, Long> countCardsLeft = gameService.getCountRemainingCardsSortedBySuitAndFaceValue(GAME_ID);
+        TreeMap<Card, Long> countCardsLeft = gameService.getCountRemainingCardsSortedUsingCollectors(GAME_ID);
 
         // Then
-        assertThat(countCardsLeft, IsMapContaining.hasEntry(CardEnum.ACE_HEARTS, 1L));
-        assertThat(countCardsLeft, IsMapContaining.hasEntry(CardEnum.ACE_CLUBS, 1L));
+        assertThat(countCardsLeft, IsMapContaining.hasEntry(CARD_ACE_HEARTS, 1L) );
+        assertThat(countCardsLeft, IsMapContaining.hasEntry(CARD_ACE_CLUBS, 1L));
 
     }
 
@@ -247,11 +256,11 @@ public class GameServiceTest {
                 .willReturn(Optional.ofNullable(this.mockedGame));
 
         // When
-        List<CardEnum> playerCards = gameService.getPlayerCards(GAME_ID, PLAYER_NAME_JORGE);
+        List<Card> playerCards = gameService.getPlayerCards(GAME_ID, PLAYER_NAME_JORGE);
 
         // Then
         assertThat(playerCards, hasSize(1));
-        assertThat(playerCards, hasItem(CardEnum.TWO_HEARTS));
+        assertThat(playerCards, hasItem(CARD_TWO_HEARTS));
 
     }
 
@@ -299,12 +308,12 @@ public class GameServiceTest {
     public void givenValidGameId_whenCallAddDeck_thenAddDeckSuccessfully() {
 
         // Given
-        this.expectedGameResDTO.getGameDeckCards().addAll(CardEnum.createDeck());
+        this.expectedGameResDTO.getGameCards().addAll(CardEnum.createDeck());
 
         given(gameRepository.addNewDeck(anyString(), any())).willReturn(Optional.ofNullable((this.mockedGame)));
         given(mapper.map(any(), any())).willReturn(this.expectedGameResDTO);
 
-        ArgumentCaptor<List<CardEnum>> cardArgumentCaptor = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<List<Card>> cardArgumentCaptor = ArgumentCaptor.forClass(List.class);
 
         // When
         GameResponseDTO gameResponseDTO = gameService.addDeck(GAME_ID);
@@ -312,33 +321,33 @@ public class GameServiceTest {
         // Then
         then(gameRepository).should().addNewDeck(any(), cardArgumentCaptor.capture());
         assertThat(cardArgumentCaptor.getValue(), hasSize(52));
-        assertThat(gameResponseDTO.getGameDeckCards(), hasSize(54));
+        assertThat(gameResponseDTO.getGameCards(), hasSize(54));
 
     }
 
-    private GameResponseDTO getMockedGameResponseDTO(List<CardEnum> cards, Player... players) {
+    private GameResponseDTO getMockedGameResponseDTO(List<Card> cards, Player... players) {
         GameResponseDTO response = new GameResponseDTO();
         response.setId(GAME_ID);
-        response.setGameDeckCards(cards);
+        response.setGameCards(cards);
         response.setPlayers(Arrays.stream(players).collect(Collectors.toList()));
         return response;
     }
 
-    private List<CardEnum> getMockedGameCards(CardEnum... cards) {
-        List<CardEnum> mockedCards = new ArrayList<>();
+    private List<Card> getMockedGameCards(Card... cards) {
+        List<Card> mockedCards = new ArrayList<>();
         Arrays.stream(cards).forEach(card -> mockedCards.add(card));
         return mockedCards;
     }
 
-    private Player getMockedPlayer(String playerName, CardEnum... cards) {
+    private Player getMockedPlayer(String playerName, Card... cards) {
         return new Player(playerName, Arrays.stream(cards).collect(Collectors.toList()));
     }
 
-    private Game createMockedGame(List<CardEnum> gameCards, Player... players) {
+    private Game createMockedGame(List<Card> gameCards, Player... players) {
         Game game = new Game();
         game.setId(GAME_ID);
         game.setPlayers(Arrays.stream(players).collect(Collectors.toList()));
-        game.setGameDeckCards(gameCards);
+        game.setGameCards(gameCards);
         return game;
     }
 

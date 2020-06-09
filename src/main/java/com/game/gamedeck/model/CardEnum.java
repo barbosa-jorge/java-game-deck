@@ -1,7 +1,5 @@
 package com.game.gamedeck.model;
 
-import com.game.gamedeck.shared.utils.DeckUtils;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -95,13 +93,10 @@ public enum CardEnum {
         this.faceValue = faceValue;
     }
 
-    public static List<CardEnum> createDeck() {
-
-        List<CardEnum> cards = Arrays.stream(CardEnum.values())
+    public static List<Card> createDeck() {
+        List<Card> cards = Arrays.stream(CardEnum.values())
+                .map(c -> new Card(c.getValue(), c.getSuit(), c.getFaceValue()))
                 .collect(Collectors.toList());
-
-        DeckUtils.shuffleCards(cards);
-
         return cards;
     }
 }

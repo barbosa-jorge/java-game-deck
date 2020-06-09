@@ -1,13 +1,13 @@
 package com.game.gamedeck.shared.utils;
 
-import com.game.gamedeck.model.CardEnum;
+import com.game.gamedeck.model.Card;
 import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 
 public class DeckUtils {
 
-    public static void shuffleCards(List<CardEnum> cards) {
+    public static void shuffleCards(List<Card> cards) {
 
         if (CollectionUtils.isEmpty(cards)) {
             return;
@@ -15,8 +15,8 @@ public class DeckUtils {
 
         for (int i = 0; i < cards.size(); i++) {
             int index = (int) (Math.random() * cards.size());
-            CardEnum currentCard = cards.get(i);
-            CardEnum movedCard = cards.get(index);
+            Card currentCard = cards.get(i);
+            Card movedCard = cards.get(index);
             cards.set(index, currentCard);
             cards.set(i, movedCard);
         }

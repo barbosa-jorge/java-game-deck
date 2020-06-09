@@ -1,13 +1,14 @@
 package com.game.gamedeck.repositories.impl;
 
-import com.game.gamedeck.model.CardEnum;
-import com.game.gamedeck.model.Game;
-import com.game.gamedeck.model.Player;
+import com.game.gamedeck.model.*;
 import com.game.gamedeck.repositories.GameRepository;
 import com.mongodb.BasicDBObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -15,6 +16,8 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 
 @Repository
 public class GameRepositoryImpl implements GameRepository {
@@ -66,7 +69,7 @@ public class GameRepositoryImpl implements GameRepository {
     @Override
     public Optional<Game> findGameOnlyWithCards(String gameId) {
         Query query = Query.query(Criteria.where("_id").is(gameId));
-        query.fields().include("gameDeckCards").exclude("_id");
+        query.fields().include("gameCards").exclude("_id");
 
         Game game = mongoTemplate.findOne(query, Game.class);
         return Optional.ofNullable(game);
@@ -87,9 +90,9 @@ public class GameRepositoryImpl implements GameRepository {
         return mongoTemplate.exists(query, Game.class);
     }
 
-    public Optional<Game> updateGameCards(String gameId, List<CardEnum> cards) {
+    public Optional<Game> updateGameCards(String gameId, List<Card> cards) {
         Query query = Query.query(Criteria.where("_id").is(gameId));
-        Update update = Update.update("gameDeckCards", cards);
+        Update update = Update.update("gameCards", cards);
 
         Game updatedGame = mongoTemplate.findAndModify(query, update,
                 FIND_AND_MODIFY_OPTIONS_RETURN_TRUE, Game.class);
@@ -116,12 +119,41 @@ public class GameRepositoryImpl implements GameRepository {
     }
 
     @Override
-    public Optional<Game> addNewDeck(String gameId, List<CardEnum> cards) {
+    public Optional<Game> addNewDeck(String gameId, List<Card> cards) {
         Query query = Query.query(Criteria.where("_id").is(gameId));
-        Update update = new Update().push("gameDeckCards").each(cards);
+        Update update = new Update().push("gameCards").each(cards);
 
         Game updatedGame = mongoTemplate.findAndModify(query, update,
                 FIND_AND_MODIFY_OPTIONS_RETURN_TRUE, Game.class);
         return Optional.ofNullable(updatedGame);
+    }
+
+    public List<CardsBySuit> countRemainingCardsBySuit(String gameId) {
+        Aggregation agg = newAggregation(
+                match(Criteria.where("_id").is(gameId)),
+                unwind("gameCards"),
+                group("gameCards.suit").count().as("total"),
+                project("total").and("suit").previousOperation()
+        );
+
+        AggregationResults<CardsBySuit> groupResults = mongoTemplate
+                .aggregate(agg, Game.class, CardsBySuit.class);
+        return groupResults.getMappedResults();
+    }
+
+    public List<CardsBySuitAndValue> countRemainingCardsSorted(String gameId, Sort sort) {
+
+        Aggregation agg = newAggregation(
+                match(Criteria.where("_id").is(gameId)),
+                unwind("gameCards"),
+                group("gameCards.suit","gameCards.value", "gameCards.faceValue").count().as("total"),
+                project("total", "suit", "value", "faceValue").and("card").previousOperation(),
+                sort(sort)
+        );
+
+        AggregationResults<CardsBySuitAndValue> groupResults = mongoTemplate
+                .aggregate(agg, Game.class, CardsBySuitAndValue.class);
+
+        return groupResults.getMappedResults();
     }
 }

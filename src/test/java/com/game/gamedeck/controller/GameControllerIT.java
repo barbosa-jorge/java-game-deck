@@ -1,6 +1,6 @@
 package com.game.gamedeck.controller;
 
-import com.game.gamedeck.model.CardEnum;
+import com.game.gamedeck.model.Card;
 import com.game.gamedeck.model.Game;
 import com.game.gamedeck.model.Player;
 import com.game.gamedeck.repositories.GameRepository;
@@ -22,6 +22,13 @@ import static org.mockito.Mockito.when;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class GameControllerIT {
 
+    private static final Card CARD_ACE_CLUBS = new Card(1,"CLUBS","A");
+    private static final Card CARD_ACE_HEARTS = new Card(1,"HEARTS","A");
+    private static final String PLAYER_NAME = "jorge";
+    private static final Player PLAYER_JORGE = new Player(PLAYER_NAME);
+    private static final String GAME_ID = "5ed98daf2cd10901dc4f8422";
+    private static final String URI_API_GAMES = "/api/games";
+
     @Autowired
     private TestRestTemplate restTemplate;
 
@@ -34,7 +41,7 @@ public class GameControllerIT {
         Optional<Game> mockedGame = getMockedGame();
         when(gameRepository.save(any())).thenReturn(mockedGame);
 
-        GameResponseDTO response = restTemplate.postForEntity("/api/games", getCreateGameRequestDTO(),
+        GameResponseDTO response = restTemplate.postForEntity(URI_API_GAMES, getCreateGameRequestDTO(),
                 GameResponseDTO.class).getBody();
 
         assertEquals(getMockedGameResponseDTO(), response);
@@ -43,24 +50,24 @@ public class GameControllerIT {
 
     private GameResponseDTO getMockedGameResponseDTO() {
         GameResponseDTO response = new GameResponseDTO();
-        response.setPlayers(Arrays.asList(new Player("jorge")));
-        response.setGameDeckCards(Arrays.asList(CardEnum.ACE_HEARTS, CardEnum.ACE_CLUBS));
-        response.setId("5ed98daf2cd10901dc4f8422");
+        response.setPlayers(Arrays.asList(PLAYER_JORGE));
+        response.setGameCards(Arrays.asList(CARD_ACE_HEARTS, CARD_ACE_CLUBS));
+        response.setId(GAME_ID);
         return response;
     }
 
     private CreateGameRequestDTO getCreateGameRequestDTO() {
         CreateGameRequestDTO request = new CreateGameRequestDTO();
         request.setNumberOfDecks(1);
-        request.setPlayers(Arrays.asList("jorge"));
+        request.setPlayers(Arrays.asList(PLAYER_NAME));
         return request;
     }
 
     private Optional<Game> getMockedGame() {
         Game game = new Game();
-        game.setId("5ed98daf2cd10901dc4f8422");
-        game.setPlayers(Arrays.asList(new Player("jorge")));
-        game.setGameDeckCards(Arrays.asList(CardEnum.ACE_HEARTS, CardEnum.ACE_CLUBS));
+        game.setId(GAME_ID);
+        game.setPlayers(Arrays.asList(PLAYER_JORGE));
+        game.setGameCards(Arrays.asList(CARD_ACE_HEARTS, CARD_ACE_CLUBS));
         return Optional.ofNullable(game);
     }
 }

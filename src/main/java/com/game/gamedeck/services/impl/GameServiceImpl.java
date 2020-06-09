@@ -2,9 +2,7 @@ package com.game.gamedeck.services.impl;
 
 import com.game.gamedeck.exceptions.GameException;
 import com.game.gamedeck.exceptions.NotFoundException;
-import com.game.gamedeck.model.CardEnum;
-import com.game.gamedeck.model.Game;
-import com.game.gamedeck.model.Player;
+import com.game.gamedeck.model.*;
 import com.game.gamedeck.repositories.GameRepository;
 import com.game.gamedeck.requests.AddPlayerRequestDTO;
 import com.game.gamedeck.requests.CreateGameRequestDTO;
@@ -21,6 +19,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -98,7 +97,7 @@ public class GameServiceImpl implements GameService {
 
     @Override
     public GameResponseDTO shuffleCards(String gameId) {
-        List<CardEnum> gameCards = getGameCards(gameId);
+        List<Card> gameCards = getGameCards(gameId);
         DeckUtils.shuffleCards(gameCards);
 
         Game savedGame = repository.updateGameCards(gameId, gameCards)
@@ -109,22 +108,24 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
-    public Map<String, Long> getCountCardsLeft(String gameId) {
-
-        List<CardEnum> gameCards = getGameCards(gameId);
-
-        return gameCards.stream()
-                .collect(Collectors.groupingBy(CardEnum::getSuit, Collectors.counting()));
+    public List<CardsBySuit> getCountRemainingCardsBySuit(String gameId) {
+        return repository.countRemainingCardsBySuit(gameId);
     }
 
     @Override
-    public TreeMap<CardEnum, Long> getCountRemainingCardsSortedBySuitAndFaceValue(String gameId) {
+    public Map<String, Long> getCardsLeftBySuitUsingCollectors(String gameId) {
+        return getGameCards(gameId).stream()
+                .collect(Collectors.groupingBy(Card::getSuit, Collectors.counting()));
+    }
 
-        Comparator<CardEnum> sortBySuit = Comparator.comparing(CardEnum::getSuit);
-        Comparator<CardEnum> sortByValueDesc = Comparator.comparing(CardEnum::getValue).reversed();
-        Comparator<CardEnum> sortBySuitAndValueDesc = sortBySuit.thenComparing(sortByValueDesc);
 
-        List<CardEnum> gameCards = getGameCards(gameId);
+    public TreeMap<Card, Long> getCountRemainingCardsSortedUsingCollectors(String gameId) {
+
+        Comparator<Card> sortBySuit = Comparator.comparing(Card::getSuit);
+        Comparator<Card> sortByValueDesc = Comparator.comparing(Card::getValue).reversed();
+        Comparator<Card> sortBySuitAndValueDesc = sortBySuit.thenComparing(sortByValueDesc);
+
+        List<Card> gameCards = getGameCards(gameId);
 
         return gameCards.stream()
             .collect(Collectors.groupingBy(Function.identity(),
@@ -133,7 +134,12 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
-    public List<CardEnum> getPlayerCards(String gameId, String playerName) {
+    public List<CardsBySuitAndValue> getCountRemainingCardsSorted(String gameId, Sort sort) {
+        return repository.countRemainingCardsSorted(gameId, sort);
+    }
+
+    @Override
+    public List<Card> getPlayerCards(String gameId, String playerName) {
         return repository.findGameOnlyWithPlayer(gameId, playerName)
                 .orElseThrow(() -> new NotFoundException(buildErrorMessage(
                         AppErrorConstants.ERROR_PLAYER_NOT_FOUND, NO_PARAMS)))
@@ -173,14 +179,14 @@ public class GameServiceImpl implements GameService {
         return modelMapper.map(updatedGame, GameResponseDTO.class);
     }
 
-    private int calculatePlayerCards(List<CardEnum> onHandCards) {
+    private int calculatePlayerCards(List<Card> onHandCards) {
         return onHandCards.stream().mapToInt(card -> card.getValue()).sum();
     }
 
     private void pickCardAndAddToPlayer(Game game, String playerName) {
         validateAvailableCards(game);
 
-        CardEnum pickedCard = game.getGameDeckCards().remove(0);
+        Card pickedCard = game.getGameCards().remove(0);
 
         List<Player> players = game.getPlayers().stream()
             .map(player -> {
@@ -202,13 +208,14 @@ public class GameServiceImpl implements GameService {
     }
 
     private void addCardsToGameDeck(int numberOfDecks, Game game) {
-        List<CardEnum> gameDeckCards = new ArrayList<>();
+
+        List<Card> gameCards = new ArrayList<>();
 
         for (int i = 0; i < numberOfDecks; i++) {
-            gameDeckCards.addAll(CardEnum.createDeck());
+            gameCards.addAll(CardEnum.createDeck());
         }
 
-        game.setGameDeckCards(gameDeckCards);
+        game.setGameCards(gameCards);
     }
 
     private void requiredNonEmpty(String fieldValue, String fieldName) {
@@ -238,7 +245,7 @@ public class GameServiceImpl implements GameService {
     }
 
     private void validateAvailableCards(Game game) {
-        if (CollectionUtils.isEmpty(game.getGameDeckCards())) {
+        if (CollectionUtils.isEmpty(game.getGameCards())) {
             throw new GameException(buildErrorMessage(
                 AppErrorConstants.ERROR_NO_MORE_CARDS_AVAILABLE, NO_PARAMS));
         }
@@ -278,10 +285,10 @@ public class GameServiceImpl implements GameService {
                 .getPlayers();
     }
 
-    private List<CardEnum> getGameCards(String gameId) {
+    private List<Card> getGameCards(String gameId) {
         return repository.findGameOnlyWithCards(gameId)
                 .orElseThrow(() -> new NotFoundException(buildErrorMessage(
                         AppErrorConstants.ERROR_GAME_NOT_FOUND, NO_PARAMS)))
-                .getGameDeckCards();
+                .getGameCards();
     }
 }

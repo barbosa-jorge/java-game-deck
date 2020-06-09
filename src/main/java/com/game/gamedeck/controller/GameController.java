@@ -1,6 +1,6 @@
 package com.game.gamedeck.controller;
 
-import com.game.gamedeck.model.CardEnum;
+import com.game.gamedeck.model.Card;
 import com.game.gamedeck.requests.AddPlayerRequestDTO;
 import com.game.gamedeck.requests.CreateGameRequestDTO;
 import com.game.gamedeck.responses.GameResponseDTO;
@@ -9,6 +9,7 @@ import com.game.gamedeck.responses.PlayerTotalResponseDTO;
 import com.game.gamedeck.services.GameService;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -81,8 +82,8 @@ public class GameController {
     @GetMapping("/games/{game-id}/players/{player-name}/cards")
     @ApiOperation(value="Retrieve Player's cards",
             notes="Retrieve player's cards. You need to enter a valid game id and player name. ")
-    public ResponseEntity<List<CardEnum>> getPlayerCards(@PathVariable("game-id") String gameId,
-                                                         @PathVariable("player-name") String playerName) {
+    public ResponseEntity<List<Card>> getPlayerCards(@PathVariable("game-id") String gameId,
+                                                     @PathVariable("player-name") String playerName) {
         return new ResponseEntity<>(gameService.getPlayerCards(gameId, playerName), HttpStatus.OK);
     }
 
@@ -92,21 +93,21 @@ public class GameController {
         return new ResponseEntity(gameService.getPlayersTotals(gameId), HttpStatus.OK);
     }
 
-    @GetMapping("/games/{game-id}/cards/left-per-suit")
+    @GetMapping("/games/{game-id}/cards/summary/remaining/suit")
     @ApiOperation(value="Retrieve count of cards left in the deck per suit",
             notes="Retrieve count of the cards left in the deck per suit. You need to enter a valid game id.")
-    public ResponseEntity<Map<String, Long>> getCountCardsLeft(@PathVariable("game-id") String gameId) {
-        return new ResponseEntity(gameService.getCountCardsLeft(gameId), HttpStatus.OK);
+    public ResponseEntity<Map<String, Long>> getCountRemainingCardsBySuit(@PathVariable("game-id") String gameId) {
+        return new ResponseEntity(gameService.getCountRemainingCardsBySuit(gameId), HttpStatus.OK);
     }
 
-    @GetMapping("/games/{game-id}/cards/remaining-by-suit-and-face")
+    @GetMapping("/games/{game-id}/cards/summary/remaining")
     @ApiOperation(value="Retrieve count of cards left in the card, sorting them by suit and face value",
             notes="Retrieve count of cards left in the card, sorting them by suit and face value. " +
                     "You need to enter a valid game id.")
-    public ResponseEntity<TreeMap<CardEnum, Long>> getCountRemainingCardsSortedBySuitAndFaceValue(
-            @PathVariable("game-id") String gameId) {
+    public ResponseEntity<TreeMap<Card, Long>> getCountRemainingCardsSorted(
+            @PathVariable("game-id") String gameId, Sort sort) {
         return new ResponseEntity(gameService
-                .getCountRemainingCardsSortedBySuitAndFaceValue(gameId), HttpStatus.OK);
+                .getCountRemainingCardsSorted(gameId, sort), HttpStatus.OK);
     }
 
     @PutMapping("/games/{game-id}/cards/shuffle")

@@ -12,7 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 public class Player {
     private String name;
-    private List<CardEnum> onHandCards = new ArrayList<>();
+    private List<Card> onHandCards = new ArrayList<>();
 
     public Player(String name) {
         this.name = name;

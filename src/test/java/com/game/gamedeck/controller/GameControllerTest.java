@@ -1,6 +1,6 @@
 package com.game.gamedeck.controller;
 
-import com.game.gamedeck.model.CardEnum;
+import com.game.gamedeck.model.Card;
 import com.game.gamedeck.model.Player;
 import com.game.gamedeck.requests.CreateGameRequestDTO;
 import com.game.gamedeck.responses.GameResponseDTO;
@@ -25,6 +25,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(GameController.class)
 public class GameControllerTest {
 
+    private static final Card CARD_ACE_CLUBS = new Card(1,"CLUBS","A");
+    private static final Card CARD_ACE_HEARTS = new Card(1,"HEARTS","A");
+    private static final String PLAYER_NAME = "jorge";
+    private static final Player PLAYER_JORGE = new Player(PLAYER_NAME);
+    private static final String GAME_ID = "5ed98daf2cd10901dc4f8422";
+    private static final String URI_API_GAMES = "/api/games";
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -38,7 +45,7 @@ public class GameControllerTest {
         when(gameService.createGame(any())).thenReturn(responseDTO);
 
         RequestBuilder request = MockMvcRequestBuilders
-                .post("/api/games")
+                .post(URI_API_GAMES)
                 .content(new Gson().toJson(getCreateGameRequestDTO()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON);
@@ -51,21 +58,25 @@ public class GameControllerTest {
     }
 
     private String getExpectedMockedGameResponse() {
-        return "{ id: 5ed98daf2cd10901dc4f8422, gameDeckCards: [ACE_HEARTS, ACE_CLUBS], players : [ { name: jorge , onHandCards: [] } ] }";
+        return "{ id: 5ed98daf2cd10901dc4f8422, " +
+                "gameCards: [" +
+                    "{value: 1, suit: HEARTS, faceValue: A}, " +
+                    "{value: 1, suit: CLUBS, faceValue: A}], " +
+                "players : [{ name: jorge , onHandCards: []}]}";
     }
 
     private GameResponseDTO getMockedGameResponseDTO() {
         GameResponseDTO response = new GameResponseDTO();
-        response.setPlayers(Arrays.asList(new Player("jorge")));
-        response.setGameDeckCards(Arrays.asList(CardEnum.ACE_HEARTS, CardEnum.ACE_CLUBS));
-        response.setId("5ed98daf2cd10901dc4f8422");
+        response.setPlayers(Arrays.asList(PLAYER_JORGE));
+        response.setGameCards(Arrays.asList(CARD_ACE_HEARTS, CARD_ACE_CLUBS));
+        response.setId(GAME_ID);
         return response;
     }
 
     private CreateGameRequestDTO getCreateGameRequestDTO() {
         CreateGameRequestDTO request = new CreateGameRequestDTO();
         request.setNumberOfDecks(1);
-        request.setPlayers(Arrays.asList("jorge"));
+        request.setPlayers(Arrays.asList(PLAYER_NAME));
         return request;
     }
 }

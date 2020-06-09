@@ -16,6 +16,6 @@ import java.util.List;
 public class Game {
     @Id
     private String id;
-    private List<CardEnum> gameDeckCards = new ArrayList<>();
+    private List<Card> gameCards = new ArrayList<>();
     private List<Player> players = new ArrayList<>();
 }
