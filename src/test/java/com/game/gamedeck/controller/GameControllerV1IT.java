@@ -20,14 +20,14 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class GameControllerIT {
+public class GameControllerV1IT {
 
     private static final Card CARD_ACE_CLUBS = new Card(1,"CLUBS","A");
     private static final Card CARD_ACE_HEARTS = new Card(1,"HEARTS","A");
     private static final String PLAYER_NAME = "jorge";
     private static final Player PLAYER_JORGE = new Player(PLAYER_NAME);
     private static final String GAME_ID = "5ed98daf2cd10901dc4f8422";
-    private static final String URI_API_GAMES = "/api/games";
+    private static final String URI_API_GAMES = "/game-management/api/v1/games";
 
     @Autowired
     private TestRestTemplate restTemplate;

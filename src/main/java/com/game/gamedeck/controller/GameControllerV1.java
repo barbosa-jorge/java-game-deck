@@ -20,8 +20,8 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @RestController
-@RequestMapping("/api")
-public class GameController {
+@RequestMapping("/game-management/api/v1")
+public class GameControllerV1 {
 
     @Autowired
     private GameService gameService;
@@ -53,17 +53,17 @@ public class GameController {
         return new ResponseEntity<>(gameService.dealCards(gameId, playerName), HttpStatus.OK);
     }
 
-    @PutMapping("/games/{game-id}/players")
+    @PostMapping("/games/{game-id}/players")
     @ApiOperation(value="Add player",
             notes="Add a new player into the game. " +
                     "You need to enter a valid game id and a valid json object containing the player name.")
     public ResponseEntity<GameResponseDTO> addPlayer(@PathVariable("game-id") String gameId,
                                                      @Valid @RequestBody AddPlayerRequestDTO addPlayerRequestDTO) {
         return new ResponseEntity<>(gameService.addPlayer(gameId, addPlayerRequestDTO),
-                HttpStatus.OK);
+                HttpStatus.CREATED);
     }
 
-    @PutMapping("/games/{game-id}/players/{player-name}")
+    @DeleteMapping("/games/{game-id}/players/{player-name}")
     @ApiOperation(value="Delete player",
             notes="Delete a player from the game. You need to enter an existent game id and player name.")
     public ResponseEntity<GameResponseDTO> removePlayer(@PathVariable("game-id") String gameId,
@@ -76,7 +76,7 @@ public class GameController {
     @PostMapping("/games/{game-id}/decks")
     @ApiOperation(value="Add deck", notes="Add a new deck into the game You need to enter a valid game id.")
     public ResponseEntity<GameResponseDTO> addDeck(@PathVariable("game-id") String gameId) {
-        return new ResponseEntity<>(gameService.addDeck(gameId), HttpStatus.OK);
+        return new ResponseEntity<>(gameService.addDeck(gameId), HttpStatus.CREATED);
     }
 
     @GetMapping("/games/{game-id}/players/{player-name}/cards")
